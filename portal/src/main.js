@@ -6,6 +6,8 @@ import { phaseCurves, followCurves } from './timeline.js';
 import { fitCameraDistance } from './layout.js';
 import { cameraPose, applyCamera } from './camera.js';
 import { attachInput } from './input.js';
+import { createRing } from './ring.js';
+import { createRuneLights } from './runeLights.js';
 // @imports
 
 const params = new URLSearchParams(location.search);
@@ -29,13 +31,17 @@ const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, window.innerWidth 
 let distance = fitCameraDistance(camera.aspect);
 
 // Faint cold rim light: with no runes lit the ring is barely visible in the black.
-const rim = new THREE.DirectionalLight(0xa8bcd8, 0.25);
+const rim = new THREE.DirectionalLight(0xa8bcd8, 0.6);
 rim.position.set(-1.5, 2, 1.2);
 scene.add(rim);
 
 const state = createState();
 const preset = parseLitParam(params.get('lit'));
 if (preset) state.setInstant(preset);
+const ring = createRing();
+scene.add(ring.group);
+const runeLights = createRuneLights(scene, ring);
+state.onIgnite((i) => runeLights.burst(i, 18));
 // @modules
 
 attachInput(state, {
@@ -80,6 +86,7 @@ renderer.setAnimationLoop(() => {
   curves = followCurves(curves, phaseCurves(state.phase, state.phaseTime), dt);
   const [r, g, b] = glowColor(state.charge);
   color.setRGB(r, g, b, THREE.SRGBColorSpace);
+  runeLights.update(state, curves, color, dt, t);
   // @update
   applyCamera(camera, cameraPose(t, curves.shake), distance);
   render();
