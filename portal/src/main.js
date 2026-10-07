@@ -3,7 +3,7 @@ import { CONFIG } from './config.js';
 import { createState, parseLitParam } from './state.js';
 import { glowColor } from './palette.js';
 import { phaseCurves, followCurves } from './timeline.js';
-import { fitCameraDistance } from './layout.js';
+import { fitCameraDistance, renderPixelRatio } from './layout.js';
 import { cameraPose, applyCamera } from './camera.js';
 import { attachInput } from './input.js';
 import { createRing } from './ring.js';
@@ -11,13 +11,13 @@ import { createRuneLights } from './runeLights.js';
 import { createWaveSim } from './waveSim.js';
 import { createRippleDriver } from './rippleDriver.js';
 import { createMercury } from './mercury.js';
-// @imports
+import { createPostFx } from './postfx.js';
 
 const params = new URLSearchParams(location.search);
 const $ = (id) => document.getElementById(id);
 
 const renderer = new THREE.WebGLRenderer({ powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, CONFIG.quality.maxPixelRatio));
+renderer.setPixelRatio(renderPixelRatio(window.innerWidth, window.innerHeight, window.devicePixelRatio));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -34,7 +34,7 @@ const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, window.innerWidth 
 let distance = fitCameraDistance(camera.aspect);
 
 // Faint cold rim light: with no runes lit the ring is barely visible in the black.
-const rim = new THREE.DirectionalLight(0xa8bcd8, 0.6);
+const rim = new THREE.DirectionalLight(0xa8bcd8, 1.4);
 rim.position.set(-1.5, 2, 1.2);
 scene.add(rim);
 
@@ -51,7 +51,7 @@ state.onIgnite((i) => ripples.ignite(i));
 const mercury = createMercury(sim);
 scene.add(mercury.mesh, mercury.light);
 let simClock = 0;
-// @modules
+const post = createPostFx(renderer, scene, camera);
 
 attachInput(state, {
   fullscreen: () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()),
@@ -63,16 +63,17 @@ if (params.has('debug')) $('debug').classList.add('show');
 function resize() {
   const w = window.innerWidth;
   const h = window.innerHeight;
+  renderer.setPixelRatio(renderPixelRatio(w, h, window.devicePixelRatio));
   renderer.setSize(w, h);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   distance = fitCameraDistance(camera.aspect);
-  // @resize
+  post.setSize(w, h);
 }
 window.addEventListener('resize', resize);
 
 function render() {
-  renderer.render(scene, camera);
+  post.render();
 }
 
 const color = new THREE.Color();
@@ -102,7 +103,7 @@ renderer.setAnimationLoop(() => {
   simClock = Math.max(0, simClock - steps);
   sim.step(impulses, steps);
   mercury.update(state, curves, color, runeLights.glows, t);
-  // @update
+  post.update(state, curves, t);
   applyCamera(camera, cameraPose(t, curves.shake), distance);
   render();
 

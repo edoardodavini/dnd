@@ -108,7 +108,7 @@ export function createRuneLights(scene, ring) {
       prevProgress[i] = p;
       flare[i] *= Math.exp(-dt / 0.25);
       heat[i] = updateHeat(heat[i], p, dt);
-      const g = runeGlow(i, t, p, flare[i]) * (1 + chaseBoost(i, curves)) * (1 + 0.6 * curves.open);
+      const g = runeGlow(i, t, p, flare[i]) * (1 + chaseBoost(i, curves)) * (1 + 0.15 * curves.open);
       glows[i] = g;
       const u = ring.blocks[i].uniforms;
       u.uGlow.value = g * EMISSIVE_GAIN;

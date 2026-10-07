@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { runeAngle, runeCenter, fitCameraDistance } from '../src/layout.js';
+import { runeAngle, runeCenter, fitCameraDistance, renderPixelRatio } from '../src/layout.js';
 import { CONFIG } from '../src/config.js';
 
 describe('rune layout', () => {
@@ -36,5 +36,20 @@ describe('fitCameraDistance', () => {
       expect(2 * d * tanHalf * aspect).toBeGreaterThanOrEqual(span - 1e-9);
       expect(2 * d * tanHalf).toBeGreaterThanOrEqual(span - 1e-9);
     }
+  });
+});
+
+describe('renderPixelRatio', () => {
+  const cfg = { quality: { maxPixelRatio: 1.5, maxPixels: 6e6 } };
+
+  it('uses the device ratio up to the cap on a 1080p-scaled TV', () => {
+    expect(renderPixelRatio(1920, 1080, 2, cfg)).toBe(1.5);
+    expect(renderPixelRatio(1920, 1080, 1, cfg)).toBe(1);
+  });
+
+  it('keeps a native-4K canvas under the pixel budget', () => {
+    const r = renderPixelRatio(3840, 2160, 1, cfg);
+    expect(3840 * r * 2160 * r).toBeLessThanOrEqual(6e6 + 1);
+    expect(r).toBeGreaterThan(0.8);
   });
 });

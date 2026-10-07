@@ -68,6 +68,6 @@ export function exposure(charge, curves) {
 }
 
 export function bloomStrength(charge, curves) {
-  const b = 0.45 + 0.45 * charge + 0.5 * curves.surge + 0.2 * curves.chase + 0.15 * curves.open;
+  const b = 0.25 + 0.25 * charge + 0.4 * curves.surge + 0.15 * curves.chase + 0.1 * curves.open;
   return Math.min(BLOOM_CAP, b);
 }

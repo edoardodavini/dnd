@@ -74,7 +74,7 @@ vec3 env(vec3 R) {
   float front = max(R.z, 0.0);
   // Lit from above, dark below: a mirror shows this as a crisp gradient that ripples distort.
   float upper = smoothstep(-0.12, 0.22, R.y + 0.15 * R.x);
-  vec3 sky = vec3(0.62, 0.64, 0.68) * (0.05 + 0.3 * uCharge + 0.25 * uOpen) * upper * front * front;
+  vec3 sky = vec3(0.62, 0.64, 0.68) * (0.05 + 0.3 * uCharge + 0.1 * uOpen) * upper * front * front;
   vec2 k = R.xy - vec2(-0.12, 0.2);
   sky += vec3(1.0) * (0.05 + 0.6 * uCharge) * exp(-dot(k, k) * 60.0);
   float lr = length(R.xy);
@@ -107,7 +107,7 @@ void main() {
 
   // Light from within: brighter on crests, strongest once open.
   float crest = clamp(texture2D(uSim, vDisc * 0.5 + 0.5).r * 8.0, -1.0, 1.0);
-  col += uColor * (0.01 + 0.12 * uCharge * uCharge + 0.45 * uOpen) * (0.6 + 0.4 * crest);
+  col += uColor * (0.01 + 0.12 * uCharge * uCharge + 0.3 * uOpen) * (0.6 + 0.4 * crest);
 
   // Faint slow rays once open.
   float ang = atan(vDisc.y, vDisc.x + 1e-5);
@@ -165,7 +165,7 @@ export function createMercury(sim, cfg = CONFIG.mercury) {
     uniforms.uColor.value.copy(color);
     for (let i = 0; i < 12; i++) uniforms.uGlow.value[i] = glows[i];
     light.color.copy(color);
-    light.intensity = 0.02 + 0.6 * state.charge * state.charge + 2.5 * curves.open + 4 * curves.surge;
+    light.intensity = 0.02 + 0.4 * state.charge * state.charge + 0.5 * curves.open + 3 * curves.surge;
   }
 
   return { mesh, light, update };

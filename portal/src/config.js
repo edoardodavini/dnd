@@ -2,6 +2,7 @@
 export const CONFIG = {
   quality: {
     maxPixelRatio: 1.5,
+    maxPixels: 6e6, // drawing-buffer budget; 3840×2160 (8.3 MP) drops to single-digit fps
     simSize: 256,
     simHz: 120,
     mercurySegments: 256,
