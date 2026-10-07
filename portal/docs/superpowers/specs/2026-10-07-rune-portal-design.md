@@ -35,7 +35,7 @@ A single-use, single-page visual prop for the final session of a D&D 5e campaign
 
 | File | Responsibility | Depends on |
 |---|---|---|
-| `src/config.js` | All tunables: quality (pixel-ratio cap, sim resolution, cube-camera size), timings, colours, geometry sizes | — |
+| `src/config.js` | All tunables: quality (pixel-ratio cap, sim resolution, mercury mesh density), timings, colours, geometry sizes | — |
 | `src/state.js` | 12 lit flags, key → rune mapping, phase machine, eased `charge` (0→1), per-rune animation progress, energy flags. Pure JS, no Three.js | config |
 | `src/palette.js` | Colour ramp: charge/phase → glow colour | config |
 | `src/glyphs.js` | Stroke definitions for 12 runes (normalized 2D polylines) | — |
@@ -43,7 +43,7 @@ A single-use, single-page visual prop for the final session of a D&D 5e campaign
 | `src/ring.js` | 12 stone block meshes, materials, rune emissive uniforms | stoneTextures, config |
 | `src/runeLights.js` | Point light per rune, flicker, embers particles | state, palette |
 | `src/waveSim.js` | GPU ping-pong heightfield wave simulation, impulse API | config |
-| `src/mercury.js` | Event-horizon disc mesh + shader, reads waveSim, cube-camera reflections, energy effects, opening plume | waveSim, state, palette |
+| `src/mercury.js` | Event-horizon disc mesh + shader, reads waveSim, procedural environment reflections, energy effects, opening plume | waveSim, state, palette |
 | `src/postfx.js` | Bloom (capped), vignette, film grain, global exposure from charge | state, config |
 | `src/camera.js` | Slow drift, shake during opening | state |
 | `src/input.js` | keydown → state actions, fullscreen, help, debug overlay | state |
@@ -67,7 +67,7 @@ A single-use, single-page visual prop for the final session of a D&D 5e campaign
 - **Blocks:** 12 annular wedges, thickness ≈ 15% of outer radius, separated by thin dark seams. Each block gets a small random tilt, offset and scale for a hand-laid look.
 - **Edges:** beveled; dense mesh with noise-based vertex displacement on edges for chipped, irregular silhouettes.
 - **Textures** (generated at load, per-block variation): albedo, roughness (rough overall, slightly polished on worn high points), normal (grain + pits + cracks), AO baked into grooves and seams.
-- **Rune carving:** glyph strokes rasterized to a per-block height map with a rounded groove profile → used as displacement + normal so the carving has real depth.
+- **Rune carving:** glyph strokes evaluated per pixel as a signed-distance field (segment list per block) with a rounded groove profile → drives per-pixel normals, groove darkening (AO) and the emissive mask. The camera is front-on, so per-pixel relief is visually equivalent to geometric displacement and stays crisp at 4K.
 - **Ambient:** faint cold rim light only; at 0 runes the ring is barely visible.
 - **Rune positions:** rune `i` (1–12) sits at `i` o'clock, clockwise from 1 o'clock; rune 12 at the top.
 
@@ -106,7 +106,7 @@ Each rune has a point light just in front of its groove; intensity follows glow,
 
 - **Simulation:** GPU wave equation on a ping-pong float heightfield inside a circular boundary (reflective rim). API: `impulse(x, y, radius, strength)`, `setDamping`, `setDriver(...)`.
 - **Mesh:** dense disc filling the ring's inner radius; vertices displaced by the heightfield; normals from heightfield gradients.
-- **Shading:** liquid metal — metalness 1, very low roughness, Fresnel. Reflects a low-res cube-camera capture of the ring (so lit runes appear mirrored and distorted). Inner emissive glow increases with charge.
+- **Shading:** liquid metal — metalness 1, very low roughness, Fresnel. Reflects a procedural environment evaluated in the shader: a soft silver studio gradient plus a ring of 12 light blobs driven by the runes' glow (so lit runes appear mirrored and distorted in the waves). Cheaper and more controllable than a cube-camera capture, whose view would mostly show the dark room behind the viewer. Inner emissive glow increases with charge.
 
 ### Intensity by charge
 
@@ -164,7 +164,7 @@ Uses `KeyboardEvent.code` so physical keys work on any layout (including Italian
 | `Equal` | toggle rune 12 |
 | `Backspace` | reset all |
 | `KeyF` | toggle fullscreen |
-| `Slash` (`?`) | toggle help overlay |
+| `KeyH` | toggle help overlay (`?` sits on different physical keys across layouts) |
 | `KeyD` | toggle debug FPS overlay |
 
 Cursor hidden. Key repeat ignored.
@@ -172,7 +172,7 @@ Cursor hidden. Key repeat ignored.
 ## 10. Performance
 
 - Target 60 fps at 4K.
-- Config knobs: pixel-ratio cap, wave-sim resolution, mercury mesh density, cube-camera resolution and update rate, bloom resolution.
+- Config knobs: pixel-ratio cap, wave-sim resolution, mercury mesh density, sim steps per second.
 - Debug overlay shows fps and current state.
 
 ## 11. Testing
