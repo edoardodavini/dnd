@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>The Portal</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #000; overflow: hidden; cursor: none; }
+      canvas { display: block; }
+      .overlay {
+        position: fixed; display: none; padding: 12px 16px;
+        color: #8d96a0; background: rgba(0, 0, 0, 0.8); border: 1px solid #1c1c1c;
+        font: 14px/1.6 ui-monospace, Menlo, monospace; white-space: pre;
+      }
+      .overlay.show { display: block; }
+      #help { left: 24px; bottom: 24px; }
+      #debug { right: 24px; top: 24px; }
+      #error { left: 50%; top: 50%; transform: translate(-50%, -50%); color: #c9a; }
+    </style>
+  </head>
+  <body>
+    <div id="help" class="overlay">1 … 0  -  =   light / extinguish runes 1–12
+Backspace     extinguish all
+F             fullscreen
+H             this help
+D             fps / state</div>
+    <div id="debug" class="overlay"></div>
+    <div id="error" class="overlay"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
