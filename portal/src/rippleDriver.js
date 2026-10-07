@@ -54,8 +54,10 @@ export function createRippleDriver(rand = Math.random) {
     const en = snap.energies;
     lastMul = en.mul;
     const out = [];
+    // Amplitudes are tuned per 60 Hz frame; scale by dt so a 120 Hz display doesn't double the forcing.
+    const frameScale = dt * 60;
     const osc = (x, y, r, amp, hz) => {
-      if (amp > 1e-4) out.push({ x, y, r, s: amp * Math.sin(TAU * hz * time) });
+      if (amp > 1e-4) out.push({ x, y, r, s: amp * frameScale * Math.sin(TAU * hz * time) });
     };
 
     // Continuous sources (at most 10).

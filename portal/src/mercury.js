@@ -85,7 +85,8 @@ vec3 env(vec3 R) {
     float da = abs(mod(a - ai + 3.14159265, 6.2831853) - 3.14159265);
     runes += uGlow[i] * exp(-da * da * 40.0);
   }
-  runes *= exp(-pow((lr - 0.35) * 9.0, 2.0));
+  float ringDist = (lr - 0.35) * 9.0;
+  runes *= exp(-ringDist * ringDist);
   return sky + uColor * runes * 3.0;
 }
 
@@ -102,7 +103,7 @@ void main() {
   vec3 R = reflect(-V, N);
   float NoV = max(dot(N, V), 0.0);
   vec3 F0 = vec3(0.78, 0.78, 0.8);
-  vec3 F = F0 + (1.0 - F0) * pow(1.0 - NoV, 5.0);
+  vec3 F = F0 + (1.0 - F0) * pow(clamp(1.0 - NoV, 0.0, 1.0), 5.0);
   vec3 col = env(R) * F;
 
   // Light from within: brighter on crests, strongest once open.

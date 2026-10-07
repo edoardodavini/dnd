@@ -16,11 +16,11 @@ function seeded(seed) {
   };
 }
 
-function totalForce(litCount, seconds = 10) {
+function totalForce(litCount, seconds = 10, fps = 60) {
   const d = createRippleDriver(seeded(42));
   let sum = 0;
-  for (let k = 0; k < seconds * 60; k++) {
-    for (const im of d.update(snap(litCount), quiet, 1 / 60)) sum += Math.abs(im.s);
+  for (let k = 0; k < seconds * fps; k++) {
+    for (const im of d.update(snap(litCount), quiet, 1 / fps)) sum += Math.abs(im.s);
   }
   return sum;
 }
@@ -40,6 +40,13 @@ describe('createRippleDriver', () => {
     expect(f3).toBeGreaterThan(0);
     expect(f6).toBeGreaterThan(f3 * 1.5);
     expect(f11).toBeGreaterThan(f6 * 1.5);
+  });
+
+  it('injects the same energy per second at 60 Hz and 120 Hz', () => {
+    const f60 = totalForce(11, 10, 60);
+    const f120 = totalForce(11, 10, 120);
+    expect(f120 / f60).toBeGreaterThan(0.85);
+    expect(f120 / f60).toBeLessThan(1.15);
   });
 
   it('launches a ripple from the lit rune\'s rim position', () => {

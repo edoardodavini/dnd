@@ -36,6 +36,20 @@ try {
     console.log(name.padEnd(10), JSON.stringify(info));
     await page.close();
   }
+  // Bloom must run at half the drawing buffer on HiDPI too (it was sized with pixelRatio² once).
+  if (!filter) {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1600, height: 900, deviceScaleFactor: 2 });
+    await page.goto(`${file}?lit=1`);
+    await page.waitForFunction(() => window.__portal?.frames > 5, { timeout: 120000 });
+    const { bloom, canvas } = await page.evaluate(() => ({
+      bloom: window.__portal.bloomWidth(),
+      canvas: document.querySelector('canvas').width,
+    }));
+    console.log('dpr2-bloom'.padEnd(10), JSON.stringify({ bloom, canvas }));
+    if (bloom !== Math.round(canvas / 2)) errors.push(`[dpr2-bloom] bloom mip0 ${bloom}px, expected ${Math.round(canvas / 2)}px`);
+    await page.close();
+  }
 } finally {
   await browser.close();
 }

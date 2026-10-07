@@ -78,7 +78,7 @@ function render() {
 
 const color = new THREE.Color();
 let curves = phaseCurves(state.phase, state.phaseTime);
-const portal = { state, frames: 0, fps: 0 };
+const portal = { state, frames: 0, fps: 0, bloomWidth: post.bloomWidth };
 window.__portal = portal;
 let last = performance.now();
 let t = 0;

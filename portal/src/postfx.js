@@ -47,6 +47,10 @@ export function createPostFx(renderer, scene, camera) {
   composer.addPass(new OutputPass());
   const finish = new ShaderPass(FinishShader);
   composer.addPass(finish);
+  // A custom target makes the composer think in device pixels, so passes were sized with
+  // pixelRatio²; re-size in CSS pixels now that every pass exists.
+  composer.setPixelRatio(ratio);
+  composer.setSize(size.x, size.y);
 
   return {
     setSize(w, h) {
@@ -61,5 +65,6 @@ export function createPostFx(renderer, scene, camera) {
     render() {
       composer.render();
     },
+    bloomWidth: () => bloom.renderTargetsHorizontal[0].width, // debug: screenshot check at dpr 2
   };
 }
