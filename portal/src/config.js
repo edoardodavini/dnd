@@ -16,7 +16,7 @@ export const CONFIG = {
     chipAmount: 0.006,
     bumpScale: 0.02,
   },
-  mercury: { radius: 0.735, z: -0.035, displacement: 0.06, shapeScale: 0.06 },
+  mercury: { radius: 0.735, z: -0.035, displacement: 0.4, shapeScale: 0.06 },
   camera: { fov: 35, ringScreenFraction: 0.85, driftDeg: 2, driftPeriod: 30 },
   timing: {
     ignite: 0.7,

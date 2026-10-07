@@ -8,6 +8,9 @@ import { cameraPose, applyCamera } from './camera.js';
 import { attachInput } from './input.js';
 import { createRing } from './ring.js';
 import { createRuneLights } from './runeLights.js';
+import { createWaveSim } from './waveSim.js';
+import { createRippleDriver } from './rippleDriver.js';
+import { createMercury } from './mercury.js';
 // @imports
 
 const params = new URLSearchParams(location.search);
@@ -42,6 +45,12 @@ const ring = createRing();
 scene.add(ring.group);
 const runeLights = createRuneLights(scene, ring);
 state.onIgnite((i) => runeLights.burst(i, 18));
+const sim = createWaveSim(renderer);
+const ripples = createRippleDriver();
+state.onIgnite((i) => ripples.ignite(i));
+const mercury = createMercury(sim);
+scene.add(mercury.mesh, mercury.light);
+let simClock = 0;
 // @modules
 
 attachInput(state, {
@@ -87,6 +96,12 @@ renderer.setAnimationLoop(() => {
   const [r, g, b] = glowColor(state.charge);
   color.setRGB(r, g, b, THREE.SRGBColorSpace);
   runeLights.update(state, curves, color, dt, t);
+  const impulses = ripples.update(state, curves, dt);
+  simClock += dt * CONFIG.quality.simHz;
+  const steps = Math.max(1, Math.min(4, Math.floor(simClock)));
+  simClock = Math.max(0, simClock - steps);
+  sim.step(impulses, steps);
+  mercury.update(state, curves, color, runeLights.glows, t);
   // @update
   applyCamera(camera, cameraPose(t, curves.shake), distance);
   render();

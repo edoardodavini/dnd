@@ -60,16 +60,16 @@ export function createRippleDriver(rand = Math.random) {
 
     // Continuous sources (at most 10).
     const hz = 0.6 + 0.8 * c;
-    osc(0, 0, 0.06, 0.012 * (1 + c) * smoothstep(0.25, 0.5, c) * (1 - en.div), hz);
-    const divAmp = 0.012 * en.div * Math.max(c, 0.3); // ÷ energy: split into four in-phase sources
+    osc(0, 0, 0.06, 0.004 * (1 + c) * smoothstep(0.25, 0.5, c) * (1 - en.div), hz);
+    const divAmp = 0.004 * en.div * Math.max(c, 0.3); // ÷ energy: split into four in-phase sources
     for (const [x, y] of [[0.4, 0], [-0.4, 0], [0, 0.4], [0, -0.4]]) osc(x, y, 0.06, divAmp, hz);
-    const trainAmp = 0.01 * smoothstep(0.55, 0.75, c);
+    const trainAmp = 0.0035 * smoothstep(0.55, 0.75, c);
     const trains = c > 0.85 ? 4 : 2;
     for (let k = 0; k < trains; k++) {
       const a = time * 0.15 + (k * TAU) / trains;
       osc(0.85 * Math.cos(a), 0.85 * Math.sin(a), 0.07, trainAmp, 1.3 + 0.4 * k);
     }
-    osc(0, 0, 0.12, 0.02 * curves.open, 0.25); // open: slow majestic rings
+    osc(0, 0, 0.12, 0.008 * curves.open, 0.25); // open: slow majestic rings
 
     // Droplets.
     const active = snap.litCount > 0 || curves.open > 0.01 || curves.collapse > 0.01;
