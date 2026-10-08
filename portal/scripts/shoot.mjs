@@ -17,6 +17,7 @@ const SHOTS = [
   ['hint-0-div', 'portal-hint.html', 'vision=12'],
   ['hint-06-mul', 'portal-hint.html', 'lit=1,2,3,4,5,6&vision=9'],
   ['hint-11-add', 'portal-hint.html', 'lit=1,2,4,5,6,7,8,9,10,11&vision=3'],
+  ['sound-06', 'portal-sound.html', 'lit=1,2,3,4,5,6'],
 ];
 
 const url = (name) => pathToFileURL(path.resolve('dist', name)).href;
@@ -25,7 +26,7 @@ const filter = process.argv[2];
 const errors = [];
 mkdirSync('shots', { recursive: true });
 
-const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: GL_ARGS });
+const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: GL_ARGS, timeout: 180000 });
 try {
   for (const [name, pageFile, query] of SHOTS) {
     if (filter && !name.includes(filter)) continue;
@@ -40,6 +41,33 @@ try {
     console.log(name.padEnd(10), JSON.stringify(info));
     await page.close();
   }
+  // Every generated sound rendered offline in the page: no NaN, no clipping, audible, faded tails.
+  if (!filter || filter === 'audio') {
+    const page = await browser.newPage();
+    page.on('pageerror', (e) => errors.push(`[audio] ${e.message}`));
+    await page.goto(url('portal-sound.html'));
+    await page.waitForFunction(() => window.__portal?.frames > 5, { timeout: 120000 });
+    const results = await page.evaluate(() => window.__portal.audioSelfTest());
+    for (const r of results) {
+      const fail = [];
+      if (r.kind === 'cap') {
+        if (r.granted !== 24) fail.push(`voice cap granted ${r.granted}, expected 24`);
+      } else {
+        const peakDb = 20 * Math.log10(r.peak || 1e-12);
+        if (r.nan) fail.push(`${r.nan} NaN samples`);
+        if (peakDb > -1) fail.push(`peak ${peakDb.toFixed(1)} dBFS`);
+        if (r.rms < 1e-5) fail.push('silent');
+        if (r.kind === 'oneshot' && r.tailRms > 0.01 * r.peak) fail.push('tail not faded');
+      }
+      // Every opening cue must make it into the mix (a full voice cap once dropped the boom).
+      const boomPeak = results.find((x) => x.name === 'boom')?.peak ?? 0;
+      if (r.name === 'opening' && r.peak < boomPeak * 0.9) fail.push('opening is missing its boom');
+      console.log(`audio:${r.name}`.padEnd(18), fail.length ? `FAIL ${fail.join(', ')}` : 'ok');
+      for (const f of fail) errors.push(`[audio:${r.name}] ${f}`);
+    }
+    await page.close();
+  }
+
   // Bloom must run at half the drawing buffer on HiDPI too (it was sized with pixelRatio² once).
   if (!filter) {
     const page = await browser.newPage();

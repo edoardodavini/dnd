@@ -13,9 +13,12 @@ import { createRippleDriver } from './rippleDriver.js';
 import { createMercury } from './mercury.js';
 import { createPostFx } from './postfx.js';
 import { createVision } from './vision.js';
+import { audioSelfTest } from './audio/selftest.js';
 
 // portal-hint.html is built with VITE_PORTAL_HINTS=1: Shift + energy rune key shows a vision.
-const HINTS = import.meta.env.VITE_PORTAL_HINTS === '1';
+// portal-sound.html is built with VITE_PORTAL_SOUND=1 and always includes the hints.
+const SOUND = import.meta.env.VITE_PORTAL_SOUND === '1';
+const HINTS = SOUND || import.meta.env.VITE_PORTAL_HINTS === '1';
 
 const params = new URLSearchParams(location.search);
 const $ = (id) => document.getElementById(id);
@@ -95,6 +98,7 @@ function render() {
 const color = new THREE.Color();
 let curves = phaseCurves(state.phase, state.phaseTime);
 const portal = { state, frames: 0, fps: 0, bloomWidth: post.bloomWidth };
+if (SOUND) portal.audioSelfTest = audioSelfTest;
 window.__portal = portal;
 let last = performance.now();
 let t = 0;
