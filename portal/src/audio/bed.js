@@ -88,6 +88,7 @@ export function createBed(engine) {
   }
 
   let liquidClock = 0;
+  let droplets = 0;
 
   function update(p, dt) {
     const now = ctx.currentTime;
@@ -109,10 +110,14 @@ export function createBed(engine) {
 
     const due = dropletsDue(liquidClock, dt, p.liquidRate);
     liquidClock = due.clock;
+    droplets += due.count;
     for (let k = 0; k < due.count; k++) {
       liquidDroplet(engine, { pan: Math.random() * 1.6 - 0.8, level: p.liquid, at: now + Math.random() * 0.05 });
     }
   }
 
-  return { update };
+  return {
+    update,
+    get droplets() { return droplets; },
+  };
 }

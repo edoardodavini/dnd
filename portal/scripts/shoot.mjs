@@ -63,6 +63,8 @@ try {
       // Every opening cue must make it into the mix (a full voice cap once dropped the boom).
       const boomPeak = results.find((x) => x.name === 'boom')?.peak ?? 0;
       if (r.name === 'opening' && r.peak < boomPeak * 0.9) fail.push('opening is missing its boom');
+      const whisperPeak = results.find((x) => x.name === 'whisper')?.peak ?? 0;
+      if (r.name === 'whisperReplay' && r.peak > whisperPeak * 1.25) fail.push('replayed whispers stack');
       console.log(`audio:${r.name}`.padEnd(18), fail.length ? `FAIL ${fail.join(', ')}` : 'ok');
       for (const f of fail) errors.push(`[audio:${r.name}] ${f}`);
     }
@@ -73,6 +75,15 @@ try {
     console.log('audio:live'.padEnd(18), JSON.stringify(live));
     if (live.state !== 'running') errors.push(`[audio:live] context ${live.state}, expected running`);
     if (live.voices < 1) errors.push('[audio:live] first rune press made no sound');
+    // A suspended audio clock (sleep, HDMI drop) must not queue droplets that later fire all at once.
+    await page.evaluate(() => { for (let i = 1; i < 11; i++) window.__portal.state.toggle(i); });
+    await page.evaluate(() => window.__portal.audio.context.suspend());
+    const before = (await page.evaluate(() => window.__portal.audio.debug())).droplets;
+    await new Promise((r) => setTimeout(r, 1500));
+    const after = (await page.evaluate(() => window.__portal.audio.debug())).droplets;
+    console.log('audio:suspended'.padEnd(18), after === before ? 'ok' : `FAIL ${after - before} droplets queued`);
+    if (after !== before) errors.push(`[audio:suspended] ${after - before} droplets queued while the audio clock was stopped`);
+    await page.evaluate(() => window.__portal.audio.context.resume());
     await page.close();
   }
 

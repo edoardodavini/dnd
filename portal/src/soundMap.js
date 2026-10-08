@@ -65,3 +65,8 @@ export function dropletsDue(clock, dt, rate, max = 3) {
   }
   return { count, clock: Math.min(next, 1) };
 }
+
+// One opening chase at a time: toggling the 12th rune off and on quickly must not stack chases.
+export function allowChase(lastAt, now, gap = 1) {
+  return lastAt === null || now - lastAt >= gap;
+}

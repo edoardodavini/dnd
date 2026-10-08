@@ -63,6 +63,14 @@ const bedAt = (charge, curves, energies = NONE, vision = 0) => (engine) =>
 
 // Continuous layers and overlapping scenes: no tail check.
 export const MIXES = {
+  // Shift + rune pressed four times: each new whisper replaces the last.
+  whisperReplay: [9.5, (e) => {
+    let previous = null;
+    for (const t of [0, 0.5, 1.0, 1.5]) {
+      previous?.fade(t);
+      previous = voices.whisper(e, { at: t });
+    }
+  }],
   bedDormant: [3, bedAt(0, phaseCurves('dormant', 0))],
   bedHalf: [3, bedAt(0.5, phaseCurves('charging', 0))],
   bedEleven: [3, bedAt(11 / 12, phaseCurves('charging', 0), ALL)],

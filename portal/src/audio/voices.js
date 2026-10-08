@@ -243,9 +243,10 @@ export function splash(engine, { level = 0.5, at } = {}) {
 }
 
 // Vision: a breathy whisper sweeping between vowel-like formants, with a faint glassy shimmer.
+// Returns a handle whose fade(at) silences it, so a replayed vision replaces rather than stacks.
 export function whisper(engine, { level = 0.3, at } = {}) {
   const v = begin(engine, at, true);
-  if (!v) return;
+  if (!v) return null;
   const { ctx, t0, release } = v;
   const g = ctx.createGain();
   g.gain.setValueAtTime(0, t0);
@@ -281,6 +282,12 @@ export function whisper(engine, { level = 0.3, at } = {}) {
     vibrato.stop(t0 + 6.1);
   }
   last.onended = release;
+  return {
+    fade(time) {
+      g.gain.cancelAndHoldAtTime(time);
+      g.gain.linearRampToValueAtTime(0, time + 0.15);
+    },
+  };
 }
 
 // Opening: two quick turns of bowl strikes clockwise around the ring — one voice for the whole gesture.

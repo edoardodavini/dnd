@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  soundParams, bowlFrequency, dbToGain, createVolume, cuesCrossed, dropletsDue,
+  soundParams, bowlFrequency, dbToGain, createVolume, cuesCrossed, dropletsDue, allowChase,
 } from '../src/soundMap.js';
 import { phaseCurves, openingCurves } from '../src/timeline.js';
 
@@ -132,5 +132,13 @@ describe('dropletsDue', () => {
 
   it('is silent at rate 0', () => {
     expect(dropletsDue(0.5, 1, 0)).toEqual({ count: 0, clock: 0.5 });
+  });
+});
+
+describe('allowChase', () => {
+  it('plays the first chase and refuses another within a second', () => {
+    expect(allowChase(null, 10)).toBe(true);
+    expect(allowChase(10, 10.5)).toBe(false);
+    expect(allowChase(10, 11)).toBe(true);
   });
 });
