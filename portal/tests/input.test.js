@@ -4,14 +4,14 @@ import { createState } from '../src/state.js';
 
 function key(code, extra = {}) {
   const e = new Event('keydown', { cancelable: true });
-  Object.assign(e, { code, repeat: false, metaKey: false, ctrlKey: false, altKey: false, ...extra });
+  Object.assign(e, { code, repeat: false, metaKey: false, ctrlKey: false, altKey: false, shiftKey: false, ...extra });
   return e;
 }
 
 function setup() {
   const target = new EventTarget();
   const state = createState();
-  const actions = { fullscreen: vi.fn(), help: vi.fn(), debug: vi.fn() };
+  const actions = { fullscreen: vi.fn(), help: vi.fn(), debug: vi.fn(), vision: vi.fn() };
   const detach = attachInput(state, actions, target);
   return { target, state, actions, detach };
 }
@@ -61,6 +61,30 @@ describe('attachInput', () => {
     expect(actions.fullscreen).toHaveBeenCalledOnce();
     expect(actions.help).toHaveBeenCalledOnce();
     expect(actions.debug).toHaveBeenCalledOnce();
+  });
+
+  it('Shift + an energy rune key summons its vision without toggling it', () => {
+    const { target, state, actions } = setup();
+    target.dispatchEvent(key('Digit3', { shiftKey: true }));
+    target.dispatchEvent(key('Equal', { shiftKey: true }));
+    expect(actions.vision).toHaveBeenNthCalledWith(1, 2);
+    expect(actions.vision).toHaveBeenNthCalledWith(2, 11);
+    expect(state.litCount).toBe(0);
+  });
+
+  it('Shift + any other rune key does nothing', () => {
+    const { target, state, actions } = setup();
+    target.dispatchEvent(key('Digit4', { shiftKey: true }));
+    expect(actions.vision).not.toHaveBeenCalled();
+    expect(state.litCount).toBe(0);
+  });
+
+  it('Shift + energy key is harmless when visions are not enabled', () => {
+    const target = new EventTarget();
+    const state = createState();
+    attachInput(state, {}, target);
+    target.dispatchEvent(key('Digit6', { shiftKey: true }));
+    expect(state.litCount).toBe(0);
   });
 
   it('detaches cleanly', () => {

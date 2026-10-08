@@ -19,6 +19,7 @@ export const CONFIG = {
   },
   mercury: { radius: 0.735, z: -0.035, displacement: 0.4, shapeScale: 0.06 },
   camera: { fov: 35, ringScreenFraction: 0.85, driftDeg: 2, driftPeriod: 30 },
+  vision: { fadeIn: 1.5, hold: 2.5, fadeOut: 2.0 },
   timing: {
     ignite: 0.7,
     unlight: 0.9,

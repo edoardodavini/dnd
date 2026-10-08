@@ -10,26 +10,30 @@ const GL_ARGS = process.env.PORTAL_GL === 'swiftshader'
   ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']
   : ['--use-angle=metal', '--ignore-gpu-blocklist'];
 const SHOTS = [
-  ['0-dormant', ''],
-  ['06-lit', '1,2,3,4,5,6'],
-  ['11-lit', '1,2,3,4,5,6,7,8,9,10,11'],
-  ['12-open', 'all'],
+  ['0-dormant', 'portal.html', ''],
+  ['06-lit', 'portal.html', 'lit=1,2,3,4,5,6'],
+  ['11-lit', 'portal.html', 'lit=1,2,3,4,5,6,7,8,9,10,11'],
+  ['12-open', 'portal.html', 'lit=all'],
+  ['hint-0-div', 'portal-hint.html', 'vision=12'],
+  ['hint-06-mul', 'portal-hint.html', 'lit=1,2,3,4,5,6&vision=9'],
+  ['hint-11-add', 'portal-hint.html', 'lit=1,2,4,5,6,7,8,9,10,11&vision=3'],
 ];
 
-const file = pathToFileURL(path.resolve('dist/portal.html')).href;
+const url = (name) => pathToFileURL(path.resolve('dist', name)).href;
+const file = url('portal.html');
 const filter = process.argv[2];
 const errors = [];
 mkdirSync('shots', { recursive: true });
 
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: GL_ARGS });
 try {
-  for (const [name, lit] of SHOTS) {
+  for (const [name, pageFile, query] of SHOTS) {
     if (filter && !name.includes(filter)) continue;
     const page = await browser.newPage();
     await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
     page.on('console', (m) => { if (m.type() === 'error') errors.push(`[${name}] ${m.text()}`); });
     page.on('pageerror', (e) => errors.push(`[${name}] ${e.message}`));
-    await page.goto(`${file}?debug=1${lit ? `&lit=${lit}` : ''}`);
+    await page.goto(`${url(pageFile)}?debug=1${query ? `&${query}` : ''}`);
     await page.waitForFunction(() => window.__portal?.frames > 30, { timeout: 120000 });
     await page.screenshot({ path: `shots/${name}.png` });
     const info = await page.evaluate(() => ({ phase: window.__portal.state.phase, fps: window.__portal.fps }));

@@ -12,6 +12,10 @@ import { createWaveSim } from './waveSim.js';
 import { createRippleDriver } from './rippleDriver.js';
 import { createMercury } from './mercury.js';
 import { createPostFx } from './postfx.js';
+import { createVision } from './vision.js';
+
+// portal-hint.html is built with VITE_PORTAL_HINTS=1: Shift + energy rune key shows a vision.
+const HINTS = import.meta.env.VITE_PORTAL_HINTS === '1';
 
 const params = new URLSearchParams(location.search);
 const $ = (id) => document.getElementById(id);
@@ -52,11 +56,23 @@ const mercury = createMercury(sim);
 scene.add(mercury.mesh, mercury.light);
 let simClock = 0;
 const post = createPostFx(renderer, scene, camera);
+const vision = createVision();
+if (HINTS) {
+  const [hinted] = parseLitParam(params.get('vision')) ?? [];
+  if (hinted !== undefined) vision.setInstant(hinted);
+  $('help').textContent += '\nShift + 3 6 9 =  vision of that rune';
+}
 
 attachInput(state, {
   fullscreen: () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()),
   help: () => $('help').classList.toggle('show'),
   debug: () => $('debug').classList.toggle('show'),
+  vision: HINTS
+    ? (i) => {
+        vision.show(i);
+        ripples.pulse(0, 0, 0.25, -0.12); // something surfaces
+      }
+    : undefined,
 });
 if (params.has('debug')) $('debug').classList.add('show');
 
@@ -102,6 +118,8 @@ renderer.setAnimationLoop(() => {
   const steps = Math.max(1, Math.min(4, Math.floor(simClock)));
   simClock = Math.max(0, simClock - steps);
   sim.step(impulses, steps);
+  vision.update(dt);
+  mercury.setVision(vision.rune, vision.level);
   mercury.update(state, curves, color, runeLights.glows, t);
   post.update(state, curves, t);
   applyCamera(camera, cameraPose(t, curves.shake), distance);

@@ -49,6 +49,13 @@ describe('createRippleDriver', () => {
     expect(f120 / f60).toBeLessThan(1.15);
   });
 
+  it('pulse() queues a one-off disturbance for the next frame', () => {
+    const d = createRippleDriver(seeded(1));
+    d.pulse(0, 0, 0.25, -0.12);
+    const out = d.update(snap(0), phaseCurves('dormant', 0), 1 / 60);
+    expect(out).toEqual([{ x: 0, y: 0, r: 0.25, s: -0.12 }]);
+  });
+
   it('launches a ripple from the lit rune\'s rim position', () => {
     const d = createRippleDriver(seeded(1));
     d.ignite(11); // rune 12, top

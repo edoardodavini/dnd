@@ -99,5 +99,10 @@ export function createRippleDriver(rand = Math.random) {
     return out;
   }
 
-  return { ignite, update };
+  // One-off disturbance, e.g. a vision surfacing.
+  function pulse(x, y, r, s) {
+    queue({ x, y, r, s });
+  }
+
+  return { ignite, pulse, update };
 }

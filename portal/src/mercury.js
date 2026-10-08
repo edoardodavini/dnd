@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
 import { NOISE_GLSL } from './glsl/noise.js';
+import { GLYPHS, MAX_SEGMENTS, flattenGlyph } from './glyphs.js';
 
 const HEIGHT_GLSL = /* glsl */ `
 uniform sampler2D uSim;
@@ -60,8 +61,24 @@ uniform float uOpen;
 uniform float uCollapse;
 uniform vec3 uColor;
 uniform float uGlow[12];
+uniform vec4 uVisionSeg[${MAX_SEGMENTS}];
+uniform int uVisionCount;
+uniform float uVision;
 varying vec2 vDisc;
 varying vec3 vWorldPos;
+
+// Distance (glyph units) to the vision rune's strokes.
+float visionDist(vec2 g) {
+  float best = 1e3;
+  for (int k = 0; k < ${MAX_SEGMENTS}; k++) {
+    if (k >= uVisionCount) break;
+    vec2 a = uVisionSeg[k].xy;
+    vec2 ab = uVisionSeg[k].zw - a;
+    float t = clamp(dot(g - a, ab) / dot(ab, ab), 0.0, 1.0);
+    best = min(best, length(g - a - ab * t));
+  }
+  return best;
+}
 
 // Fine, irregular surface shiver (animated noise, not plane waves: plane waves interfere into a lattice).
 float microWaves(vec2 q) {
@@ -110,6 +127,20 @@ void main() {
   float crest = clamp(texture2D(uSim, vDisc * 0.5 + 0.5).r * 8.0, -1.0, 1.0);
   col += uColor * (0.01 + 0.12 * uCharge * uCharge + 0.3 * uOpen) * (0.6 + 0.4 * crest);
 
+  // Vision: the hinted rune glows foggily beneath the surface, bent by the waves,
+  // broken into drifting patches that dissolve as it fades. Never crisp.
+  if (uVision > 0.001) {
+    vec2 warp = vec2(snoise(vec3(vDisc * 2.0, uTime * 0.25)), snoise(vec3(vDisc * 2.0 + 7.3, uTime * 0.25)));
+    vec2 vq = vDisc + N.xy * 0.6 + 0.09 * warp;
+    float d = visionDist(vq / 1.2);
+    float fog = 0.6 * exp(-d * d / 0.006) + 0.4 * exp(-d * d / 0.035);
+    float patches = smoothstep(-0.25, 0.55, fbm(vec3(vDisc * 3.0, uTime * 0.12)) + (uVision - 0.75) * 1.2);
+    float v = fog * patches * uVision;
+    // A brighter, busier pool needs a stronger vision to stay faintly readable.
+    col *= 1.0 - (0.25 + 0.3 * uCharge) * v;
+    col += vec3(0.5, 0.68, 0.9) * v * (0.2 + 0.6 * uCharge);
+  }
+
   // Faint slow rays once open.
   float ang = atan(vDisc.y, vDisc.x + 1e-5);
   float rays = pow(abs(sin(ang * 13.0 + uTime * 0.2) * sin(ang * 7.0 - uTime * 0.13)), 6.0);
@@ -143,6 +174,9 @@ export function createMercury(sim, cfg = CONFIG.mercury) {
     uCollapse: { value: 0 },
     uColor: { value: new THREE.Color() },
     uGlow: { value: new Array(12).fill(0) },
+    uVisionSeg: { value: Array.from({ length: MAX_SEGMENTS }, () => new THREE.Vector4()) },
+    uVisionCount: { value: 0 },
+    uVision: { value: 0 },
   };
   const geometry = new THREE.PlaneGeometry(cfg.radius * 2, cfg.radius * 2, segments, segments);
   const mesh = new THREE.Mesh(geometry, new THREE.ShaderMaterial({ uniforms, vertexShader, fragmentShader }));
@@ -169,5 +203,15 @@ export function createMercury(sim, cfg = CONFIG.mercury) {
     light.intensity = 0.02 + 0.4 * state.charge * state.charge + 0.5 * curves.open + 3 * curves.surge;
   }
 
-  return { mesh, light, update };
+  let visionRune = null;
+  function setVision(rune, level) {
+    uniforms.uVision.value = level;
+    if (rune === null || rune === visionRune) return;
+    visionRune = rune;
+    const { segments } = flattenGlyph(GLYPHS[rune]);
+    segments.forEach((seg, k) => uniforms.uVisionSeg.value[k].set(...seg));
+    uniforms.uVisionCount.value = segments.length;
+  }
+
+  return { mesh, light, update, setVision };
 }
