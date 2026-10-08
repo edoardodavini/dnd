@@ -47,7 +47,8 @@ export function createRippleDriver(rand = Math.random) {
     };
   }
 
-  function update(snap, curves, dt) {
+  // `calm` (0..1): a vision is showing, so the pool settles to let it be read.
+  function update(snap, curves, dt, calm = 0) {
     dt = Math.min(dt, 0.1);
     time += dt;
     const c = snap.charge;
@@ -55,7 +56,8 @@ export function createRippleDriver(rand = Math.random) {
     lastMul = en.mul;
     const out = [];
     // Amplitudes are tuned per 60 Hz frame; scale by dt so a 120 Hz display doesn't double the forcing.
-    const frameScale = dt * 60;
+    const settle = 1 - 0.85 * calm;
+    const frameScale = dt * 60 * settle;
     const osc = (x, y, r, amp, hz) => {
       if (amp > 1e-4) out.push({ x, y, r, s: amp * frameScale * Math.sin(TAU * hz * time) });
     };
@@ -76,7 +78,7 @@ export function createRippleDriver(rand = Math.random) {
     // Droplets.
     const active = snap.litCount > 0 || curves.open > 0.01 || curves.collapse > 0.01;
     const rate = active ? 0.3 + 6 * c * c + 12 * curves.collapse : 0;
-    dropClock += dt * rate;
+    dropClock += dt * rate * settle;
     let drops = 0;
     while (dropClock >= 1 && drops < 4) {
       dropClock -= 1;

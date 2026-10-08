@@ -113,10 +113,11 @@ renderer.setAnimationLoop(() => {
   const [r, g, b] = glowColor(state.charge);
   color.setRGB(r, g, b, THREE.SRGBColorSpace);
   runeLights.update(state, curves, color, dt, t);
-  const impulses = ripples.update(state, curves, dt);
+  const impulses = ripples.update(state, curves, dt, vision.level);
   simClock += dt * CONFIG.quality.simHz;
   const steps = Math.max(1, Math.min(4, Math.floor(simClock)));
   simClock = Math.max(0, simClock - steps);
+  sim.setDamping(0.996 - 0.015 * vision.level); // the pool stills while a vision shows
   sim.step(impulses, steps);
   vision.update(dt);
   mercury.setVision(vision.rune, vision.level);

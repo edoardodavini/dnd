@@ -80,5 +80,8 @@ export function createWaveSim(renderer, size = CONFIG.quality.simSize) {
     get texture() { return read.texture; },
     size,
     step,
+    setDamping(value) {
+      uniforms.uDamping.value = value;
+    },
   };
 }

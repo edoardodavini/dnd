@@ -116,6 +116,15 @@ void main() {
   float hy = totalHeight(vDisc + vec2(0.0, e)) - totalHeight(vDisc - vec2(0.0, e))
            + microWaves(vDisc + vec2(0.0, e)) - microWaves(vDisc - vec2(0.0, e));
   vec3 N = normalize(vec3(-hx, -hy, 2.0 * e * uRadius));
+
+  // Vision: the liquid stills over the hinted rune so it reads through the ripples.
+  float visionD = 1e3;
+  if (uVision > 0.001) {
+    vec2 warp = vec2(snoise(vec3(vDisc * 2.0, uTime * 0.25)), snoise(vec3(vDisc * 2.0 + 7.3, uTime * 0.25)));
+    visionD = visionDist((vDisc + N.xy * 0.15 + 0.04 * warp) / 1.2);
+    float calm = exp(-visionD * visionD / 0.08) * uVision;
+    N = normalize(mix(N, vec3(0.0, 0.0, 1.0), 0.9 * calm));
+  }
   vec3 V = normalize(cameraPosition - vWorldPos);
   vec3 R = reflect(-V, N);
   float NoV = max(dot(N, V), 0.0);
@@ -130,15 +139,14 @@ void main() {
   // Vision: the hinted rune glows foggily beneath the surface, bent by the waves,
   // broken into drifting patches that dissolve as it fades. Never crisp.
   if (uVision > 0.001) {
-    vec2 warp = vec2(snoise(vec3(vDisc * 2.0, uTime * 0.25)), snoise(vec3(vDisc * 2.0 + 7.3, uTime * 0.25)));
-    vec2 vq = vDisc + N.xy * 0.6 + 0.09 * warp;
-    float d = visionDist(vq / 1.2);
-    float fog = 0.6 * exp(-d * d / 0.006) + 0.4 * exp(-d * d / 0.035);
-    float patches = smoothstep(-0.25, 0.55, fbm(vec3(vDisc * 3.0, uTime * 0.12)) + (uVision - 0.75) * 1.2);
+    float d = visionD;
+    float fog = 0.8 * exp(-d * d / 0.004) + 0.2 * exp(-d * d / 0.03);
+    float patches = smoothstep(-0.3, 0.4, fbm(vec3(vDisc * 3.0, uTime * 0.12)) + (uVision - 0.4) * 1.8);
     float v = fog * patches * uVision;
-    // A brighter, busier pool needs a stronger vision to stay faintly readable.
-    col *= 1.0 - (0.25 + 0.3 * uCharge) * v;
-    col += vec3(0.5, 0.68, 0.9) * v * (0.2 + 0.6 * uCharge);
+    // A soft shadow around the strokes gives contrast even when the pool is bright silver.
+    float halo = exp(-d * d / 0.06) * patches * uVision;
+    col *= 1.0 - (0.3 + 0.6 * uCharge) * halo;
+    col += vec3(0.45, 0.65, 1.0) * v * (0.35 + 1.0 * uCharge);
   }
 
   // Faint slow rays once open.

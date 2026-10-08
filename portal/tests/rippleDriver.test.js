@@ -16,11 +16,11 @@ function seeded(seed) {
   };
 }
 
-function totalForce(litCount, seconds = 10, fps = 60) {
+function totalForce(litCount, seconds = 10, fps = 60, calm = 0) {
   const d = createRippleDriver(seeded(42));
   let sum = 0;
   for (let k = 0; k < seconds * fps; k++) {
-    for (const im of d.update(snap(litCount), quiet, 1 / fps)) sum += Math.abs(im.s);
+    for (const im of d.update(snap(litCount), quiet, 1 / fps, calm)) sum += Math.abs(im.s);
   }
   return sum;
 }
@@ -54,6 +54,10 @@ describe('createRippleDriver', () => {
     d.pulse(0, 0, 0.25, -0.12);
     const out = d.update(snap(0), phaseCurves('dormant', 0), 1 / 60);
     expect(out).toEqual([{ x: 0, y: 0, r: 0.25, s: -0.12 }]);
+  });
+
+  it('settles the pool while a vision shows (calm = 1)', () => {
+    expect(totalForce(11, 10, 60, 1)).toBeLessThan(totalForce(11) * 0.25);
   });
 
   it('launches a ripple from the lit rune\'s rim position', () => {
