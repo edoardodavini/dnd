@@ -1,5 +1,8 @@
 import { createEngine } from './engine.js';
 import * as voices from './voices.js';
+import { createBed } from './bed.js';
+import { soundParams } from '../soundMap.js';
+import { phaseCurves } from '../timeline.js';
 
 const RATE = 48000;
 
@@ -53,9 +56,20 @@ export const ONE_SHOTS = {
   chase: [5, (e) => voices.chase(e)],
 };
 
+const NONE = { add: 0, sub: 0, mul: 0, div: 0 };
+const ALL = { add: 1, sub: 1, mul: 1, div: 1 };
+const bedAt = (charge, curves, energies = NONE, vision = 0) => (engine) =>
+  createBed(engine).update(soundParams({ charge, energies }, curves, vision), 1 / 60);
+
 // Continuous layers and overlapping scenes: no tail check.
 export const MIXES = {
+  bedDormant: [3, bedAt(0, phaseCurves('dormant', 0))],
+  bedHalf: [3, bedAt(0.5, phaseCurves('charging', 0))],
+  bedEleven: [3, bedAt(11 / 12, phaseCurves('charging', 0), ALL)],
+  bedOpen: [3, bedAt(1, phaseCurves('open', 0), ALL)],
+  bedCollapse: [3, bedAt(0.9, phaseCurves('collapsing', 0.5))],
   opening: [6, (e) => {
+    bedAt(1, phaseCurves('open', 0), ALL)(e);
     voices.chase(e, { at: 0 });
     for (const [t, cue] of [[1.0, 'rumble'], [1.8, 'inhale'], [2.4, 'surge'], [3.2, 'splash']]) voices.CUE_SOUNDS[cue](e, { at: t });
   }],

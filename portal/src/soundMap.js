@@ -14,14 +14,14 @@ export function soundParams({ charge: c, energies: e }, curves, vision = 0) {
   const { open, inhale, collapse } = curves;
   return {
     air: 0.06 * (1 - smoothstep(0, 0.4, c)) * (1 - open),
-    drone: 0.3 * smoothstep(0, 0.12, c) * (0.2 + 0.8 * c) * (1 - 0.9 * inhale) * (1 - 0.6 * open),
+    drone: 0.11 * smoothstep(0, 0.12, c) * (0.2 + 0.8 * c) * (1 - 0.9 * inhale) * (1 - 0.6 * open),
     droneCutoff: 250 + 900 * c * c + 1500 * open, // ≥ 250 Hz so harmonics carry on TV speakers
     droneDetune: 3 + 9 * c,
     dronePitch: 1 - 0.12 * collapse,
     flutter: collapse,
     liquid: 0.35 * c * (1 - 0.9 * vision) * (1 - 0.5 * open),
     liquidRate: c > 0.001 ? 0.5 + 8 * c * c : 0,
-    choir: 0.3 * open,
+    choir: 0.45 * open,
     add: 0.06 * e.add,
     sub: 0.08 * e.sub,
     echo: 0.45 * e.mul,

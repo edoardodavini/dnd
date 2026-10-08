@@ -54,7 +54,7 @@ describe('soundParams', () => {
 
   it('brings in the choir when open', () => {
     const p = at(1, NONE, phaseCurves('open', 0));
-    expect(p.choir).toBeCloseTo(0.3);
+    expect(p.choir).toBeCloseTo(0.45);
     expect(p.air).toBe(0);
   });
 });
