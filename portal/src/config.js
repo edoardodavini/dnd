@@ -19,6 +19,14 @@ export const CONFIG = {
   },
   mercury: { radius: 0.735, z: -0.035, displacement: 0.4, shapeScale: 0.06 },
   camera: { fov: 35, ringScreenFraction: 0.85, driftDeg: 2, driftPeriod: 30 },
+  audio: {
+    masterDb: -12,
+    minDb: -36,
+    maxDb: 0,
+    stepDb: 3,
+    maxVoices: 24,
+    reverbSeconds: 2.8,
+  },
   vision: { fadeIn: 1.5, hold: 2.5, fadeOut: 2.0 },
   timing: {
     ignite: 0.7,
