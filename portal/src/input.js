@@ -31,6 +31,15 @@ export function attachInput(state, actions, target = window) {
       case 'KeyD':
         actions.debug?.();
         break;
+      case 'KeyM':
+        actions.mute?.();
+        break;
+      case 'BracketLeft':
+        actions.volume?.(-1);
+        break;
+      case 'BracketRight':
+        actions.volume?.(1);
+        break;
     }
   }
   target.addEventListener('keydown', onKey);

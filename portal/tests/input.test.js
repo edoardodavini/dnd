@@ -11,7 +11,7 @@ function key(code, extra = {}) {
 function setup() {
   const target = new EventTarget();
   const state = createState();
-  const actions = { fullscreen: vi.fn(), help: vi.fn(), debug: vi.fn(), vision: vi.fn() };
+  const actions = { fullscreen: vi.fn(), help: vi.fn(), debug: vi.fn(), vision: vi.fn(), mute: vi.fn(), volume: vi.fn() };
   const detach = attachInput(state, actions, target);
   return { target, state, actions, detach };
 }
@@ -85,6 +85,23 @@ describe('attachInput', () => {
     attachInput(state, {}, target);
     target.dispatchEvent(key('Digit6', { shiftKey: true }));
     expect(state.litCount).toBe(0);
+  });
+
+  it('M mutes and [ ] step the volume', () => {
+    const { target, actions } = setup();
+    target.dispatchEvent(key('KeyM'));
+    target.dispatchEvent(key('BracketLeft'));
+    target.dispatchEvent(key('BracketRight'));
+    expect(actions.mute).toHaveBeenCalledOnce();
+    expect(actions.volume).toHaveBeenNthCalledWith(1, -1);
+    expect(actions.volume).toHaveBeenNthCalledWith(2, 1);
+  });
+
+  it('sound keys are harmless on silent pages', () => {
+    const target = new EventTarget();
+    attachInput(createState(), {}, target);
+    expect(() => target.dispatchEvent(key('KeyM'))).not.toThrow();
+    expect(() => target.dispatchEvent(key('BracketRight'))).not.toThrow();
   });
 
   it('detaches cleanly', () => {
