@@ -39,6 +39,7 @@ uniform float uBumpScale;
 uniform float uGlow;
 uniform float uProgress;
 uniform float uEmber;
+uniform float uCarve;
 uniform vec3 uRuneColor;
 varying vec3 vRingPos;
 varying vec3 vObjNormal;
@@ -80,9 +81,17 @@ vec2 glyphField(vec2 q) {
 
 float grooveProfile(float d) { return 1.0 - smoothstep(GROOVE_W * 0.3, GROOVE_W, d); }
 
+// 1 where the rune is carved so far (along its strokes), 0 on plain stone. Unlit runes don't exist.
+float carveMask(float along) {
+  return smoothstep(along - 0.06, along, uCarve * 1.06) * step(0.001, uCarve);
+}
+
 float surfaceHeight(vec3 p, bool front) {
   float h = stoneHeight(p + uSeed);
-  if (front) h -= GROOVE_DEPTH * grooveProfile(glyphField(glyphCoords(p.xy)).x);
+  if (front && uCarve > 0.0) {
+    vec2 f = glyphField(glyphCoords(p.xy));
+    h -= GROOVE_DEPTH * grooveProfile(f.x) * carveMask(f.y);
+  }
   return h;
 }
 `;
@@ -90,8 +99,8 @@ float surfaceHeight(vec3 p, bool front) {
 const FRAGMENT_ALBEDO = /* glsl */ `
 #include <map_fragment>
 bool isFront = vObjNormal.z > 0.5;
-vec2 gField = isFront ? glyphField(glyphCoords(vRingPos.xy)) : vec2(1.0, 0.0);
-float groove = grooveProfile(gField.x);
+vec2 gField = isFront && uCarve > 0.0 ? glyphField(glyphCoords(vRingPos.xy)) : vec2(1.0, 0.0);
+float groove = grooveProfile(gField.x) * carveMask(gField.y);
 float hHere = stoneHeight(vRingPos + uSeed);
 float tone = 0.5 + 0.5 * fbm(vRingPos * 2.5 + uSeed * 1.7);
 vec3 stone = mix(vec3(0.026, 0.026, 0.03), vec3(0.062, 0.06, 0.056), tone);
@@ -128,7 +137,7 @@ if (isFront) {
   float core = 1.0 - smoothstep(GROOVE_W * 0.5, GROOVE_W * 1.1, gField.x);
   float reveal = smoothstep(gField.y - 0.06, gField.y, uProgress * 1.06) * step(0.001, uProgress);
   totalEmissiveRadiance += uRuneColor * (core * reveal * uGlow);
-  totalEmissiveRadiance += vec3(0.32, 0.035, 0.006) * (core * uEmber);
+  totalEmissiveRadiance += vec3(0.32, 0.035, 0.006) * (core * uEmber * carveMask(gField.y));
 }
 `;
 
@@ -198,6 +207,7 @@ export function createRing(cfg = CONFIG.ring) {
       uGlow: { value: 0 },
       uProgress: { value: 0 },
       uEmber: { value: 0 },
+      uCarve: { value: 0 },
       uRuneColor: { value: new THREE.Color(1, 0.5, 0.1) },
     };
     const geo = blockGeometry(i, cfg);

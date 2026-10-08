@@ -8,6 +8,12 @@ export function updateHeat(heat, progress, dt, tau = 1.4) {
   return Math.max(progress, heat * Math.exp(-dt / tau));
 }
 
+// How deeply the rune is carved into the stone: unlit runes don't exist at all; the carving
+// cuts in with the glow and retreats as the ember cools.
+export function carveLevel(heat) {
+  return heat < 0.01 ? 0 : Math.min(1, heat);
+}
+
 export function emberLevel(heat, progress) {
   return Math.min(1, Math.max(0, heat - progress)) * 0.8;
 }
@@ -114,6 +120,7 @@ export function createRuneLights(scene, ring) {
       u.uGlow.value = g * EMISSIVE_GAIN;
       u.uProgress.value = p;
       u.uEmber.value = emberLevel(heat[i], p);
+      u.uCarve.value = carveLevel(heat[i]);
       u.uRuneColor.value.copy(color);
       lights[i].color.copy(color);
       lights[i].intensity = g * LIGHT_GAIN;

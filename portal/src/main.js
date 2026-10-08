@@ -45,6 +45,10 @@ let distance = fitCameraDistance(camera.aspect);
 const rim = new THREE.DirectionalLight(0xa8bcd8, 1.4);
 rim.position.set(-1.5, 2, 1.2);
 scene.add(rim);
+// Soft cool fill from the viewer's side: unlit, the ring still reads as dark grey stone.
+const fill = new THREE.DirectionalLight(0x9aa6b8, 2.2);
+fill.position.set(-0.8, 1.0, 2.5);
+scene.add(fill);
 
 const state = createState();
 const preset = parseLitParam(params.get('lit'));

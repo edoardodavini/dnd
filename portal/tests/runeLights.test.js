@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { updateHeat, emberLevel, runeGlow, chaseBoost } from '../src/runeLights.js';
+import { updateHeat, emberLevel, runeGlow, chaseBoost, carveLevel } from '../src/runeLights.js';
 import { openingCurves, phaseCurves } from '../src/timeline.js';
 
 describe('heat / ember', () => {
@@ -45,5 +45,24 @@ describe('chaseBoost', () => {
     const c = { ...openingCurves(0.5), chasePos: 0.25 }; // head at rune index 3
     expect(chaseBoost(3, c)).toBeGreaterThan(2);
     expect(chaseBoost(9, c)).toBeLessThan(0.01);
+  });
+});
+
+describe('carveLevel', () => {
+  it('is zero for a rune that was never lit (no glyph on the stone)', () => {
+    expect(carveLevel(updateHeat(0, 0, 1 / 60))).toBe(0);
+  });
+
+  it('cuts in with the glow, lingers with the ember, then the stone is smooth again', () => {
+    let heat = 0;
+    let p = 0;
+    for (let k = 0; k < 21; k++) { p = Math.min(1, p + 1 / 42); heat = updateHeat(heat, p, 1 / 60); }
+    expect(carveLevel(heat)).toBeCloseTo(p, 5); // carving follows the glow as it lights
+    for (let k = 0; k < 60; k++) { p = Math.min(1, p + 1 / 42); heat = updateHeat(heat, p, 1 / 60); }
+    expect(carveLevel(heat)).toBe(1);
+    for (let k = 0; k < 60; k++) { p = Math.max(0, p - 1 / 54); heat = updateHeat(heat, p, 1 / 60); }
+    expect(carveLevel(heat)).toBeGreaterThan(0.3); // still carved while the ember cools
+    for (let k = 0; k < 600; k++) heat = updateHeat(heat, 0, 1 / 60);
+    expect(carveLevel(heat)).toBe(0); // gone after ~10 s
   });
 });
