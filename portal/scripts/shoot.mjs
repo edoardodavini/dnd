@@ -52,6 +52,7 @@ try {
       const fail = [];
       if (r.kind === 'cap') {
         if (r.granted !== 24) fail.push(`voice cap granted ${r.granted}, expected 24`);
+        if (!r.priorityGranted) fail.push('priority voice refused at full cap');
       } else {
         const peakDb = 20 * Math.log10(r.peak || 1e-12);
         if (r.nan) fail.push(`${r.nan} NaN samples`);
@@ -65,6 +66,13 @@ try {
       console.log(`audio:${r.name}`.padEnd(18), fail.length ? `FAIL ${fail.join(', ')}` : 'ok');
       for (const f of fail) errors.push(`[audio:${r.name}] ${f}`);
     }
+    // The very first key of the night is a rune: it must unlock audio and be heard.
+    await page.keyboard.press('Digit1');
+    await new Promise((r) => setTimeout(r, 400));
+    const live = await page.evaluate(() => window.__portal.audio.debug());
+    console.log('audio:live'.padEnd(18), JSON.stringify(live));
+    if (live.state !== 'running') errors.push(`[audio:live] context ${live.state}, expected running`);
+    if (live.voices < 1) errors.push('[audio:live] first rune press made no sound');
     await page.close();
   }
 

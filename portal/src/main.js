@@ -14,6 +14,7 @@ import { createMercury } from './mercury.js';
 import { createPostFx } from './postfx.js';
 import { createVision } from './vision.js';
 import { audioSelfTest } from './audio/selftest.js';
+import { createPortalAudio } from './audio/index.js';
 
 // portal-hint.html is built with VITE_PORTAL_HINTS=1: Shift + energy rune key shows a vision.
 // portal-sound.html is built with VITE_PORTAL_SOUND=1 and always includes the hints.
@@ -66,7 +67,19 @@ if (HINTS) {
   $('help').textContent += '\nShift + 3 6 9 =  vision of that rune';
 }
 
+const audio = SOUND ? createPortalAudio({ state }) : null;
+if (SOUND) $('help').textContent += '\nM  mute     [ ]  volume';
+let volumeTimer = 0;
+function flashVolume(label) {
+  $('volume').textContent = label;
+  $('volume').classList.add('show');
+  clearTimeout(volumeTimer);
+  volumeTimer = setTimeout(() => $('volume').classList.remove('show'), 1200);
+}
+
 attachInput(state, {
+  mute: audio ? () => flashVolume(audio.toggleMute()) : undefined,
+  volume: audio ? (dir) => flashVolume(audio.volume(dir)) : undefined,
   fullscreen: () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()),
   help: () => $('help').classList.toggle('show'),
   debug: () => $('debug').classList.toggle('show'),
@@ -74,6 +87,7 @@ attachInput(state, {
     ? (i) => {
         vision.show(i);
         ripples.pulse(0, 0, 0.25, -0.12); // something surfaces
+        audio?.vision();
       }
     : undefined,
 });
@@ -98,7 +112,7 @@ function render() {
 const color = new THREE.Color();
 let curves = phaseCurves(state.phase, state.phaseTime);
 const portal = { state, frames: 0, fps: 0, bloomWidth: post.bloomWidth };
-if (SOUND) portal.audioSelfTest = audioSelfTest;
+if (SOUND) Object.assign(portal, { audio, audioSelfTest });
 window.__portal = portal;
 let last = performance.now();
 let t = 0;
@@ -124,6 +138,7 @@ renderer.setAnimationLoop(() => {
   sim.setDamping(0.996 - 0.015 * vision.level); // the pool stills while a vision shows
   sim.step(impulses, steps);
   vision.update(dt);
+  audio?.update(curves, vision.level, dt);
   mercury.setVision(vision.rune, vision.level);
   mercury.update(state, curves, color, runeLights.glows, t);
   post.update(state, curves, t);

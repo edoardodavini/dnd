@@ -60,8 +60,9 @@ export function createEngine(ctx, cfg = CONFIG.audio) {
       return src;
     },
     // One slot per one-shot; returns a release callback, or null when the cap is reached.
-    claimVoice() {
-      if (voices >= cfg.maxVoices) return null;
+    // Priority voices (opening, visions) always get through: they must never be lost.
+    claimVoice({ priority = false } = {}) {
+      if (voices >= cfg.maxVoices && !priority) return null;
       voices++;
       let released = false;
       return () => {

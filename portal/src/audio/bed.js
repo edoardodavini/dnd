@@ -1,4 +1,4 @@
-import { bloop } from './voices.js';
+import { liquidDroplet } from './voices.js';
 import { dropletsDue } from '../soundMap.js';
 
 // The always-on layers. update() follows BedParams with smooth ramps only.
@@ -110,7 +110,7 @@ export function createBed(engine) {
     const due = dropletsDue(liquidClock, dt, p.liquidRate);
     liquidClock = due.clock;
     for (let k = 0; k < due.count; k++) {
-      bloop(engine, { pan: Math.random() * 1.6 - 0.8, level: p.liquid, at: now + Math.random() * 0.05 });
+      liquidDroplet(engine, { pan: Math.random() * 1.6 - 0.8, level: p.liquid, at: now + Math.random() * 0.05 });
     }
   }
 

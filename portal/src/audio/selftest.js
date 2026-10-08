@@ -86,6 +86,8 @@ export async function audioSelfTest() {
   const capEngine = createEngine(new OfflineAudioContext(2, RATE, RATE));
   let granted = 0;
   for (let k = 0; k < 30; k++) if (capEngine.claimVoice()) granted++;
-  results.push({ name: 'voiceCap', kind: 'cap', granted });
+  // The opening and the visions must never be lost to a full cap.
+  const priorityGranted = Boolean(capEngine.claimVoice({ priority: true }));
+  results.push({ name: 'voiceCap', kind: 'cap', granted, priorityGranted });
   return results;
 }

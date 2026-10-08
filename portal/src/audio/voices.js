@@ -21,8 +21,8 @@ function envelope(param, t0, attack, peak, decay) {
   param.linearRampToValueAtTime(0, t0 + attack + decay + 0.02);
 }
 
-function begin(engine, at) {
-  const release = engine.claimVoice();
+function begin(engine, at, priority = false) {
+  const release = engine.claimVoice({ priority });
   if (!release) return null;
   return { ctx: engine.ctx, t0: at ?? engine.ctx.currentTime, release };
 }
@@ -138,6 +138,11 @@ function droplet(ctx, dest, { level, t0 }) {
   return osc;
 }
 
+// Liquid layer droplet: part of the bed, so it claims no voice slot.
+export function liquidDroplet(engine, { pan = 0, level = 0.25, at } = {}) {
+  droplet(engine.ctx, engine.output(pan, 0.5), { level, t0: at ?? engine.ctx.currentTime });
+}
+
 export function bloop(engine, { pan = 0, level = 0.25, at } = {}) {
   const v = begin(engine, at);
   if (!v) return;
@@ -145,7 +150,7 @@ export function bloop(engine, { pan = 0, level = 0.25, at } = {}) {
 }
 
 export function rumble(engine, { level = 2.4, at } = {}) {
-  const v = begin(engine, at);
+  const v = begin(engine, at, true);
   if (!v) return;
   const { ctx, t0, release } = v;
   const src = engine.noiseSource();
@@ -162,7 +167,7 @@ export function rumble(engine, { level = 2.4, at } = {}) {
 }
 
 export function inhale(engine, { level = 0.25, at } = {}) {
-  const v = begin(engine, at);
+  const v = begin(engine, at, true);
   if (!v) return;
   const { ctx, t0, release } = v;
   const src = engine.noiseSource();
@@ -180,7 +185,7 @@ export function inhale(engine, { level = 0.25, at } = {}) {
 }
 
 export function boom(engine, { level = 1.2, at } = {}) {
-  const v = begin(engine, at);
+  const v = begin(engine, at, true);
   if (!v) return;
   const { ctx, t0, release } = v;
   const out = engine.output(0, 0.35);
@@ -214,7 +219,7 @@ export function boom(engine, { level = 1.2, at } = {}) {
 }
 
 export function splash(engine, { level = 0.5, at } = {}) {
-  const v = begin(engine, at);
+  const v = begin(engine, at, true);
   if (!v) return;
   const { ctx, t0, release } = v;
   const src = engine.noiseSource();
@@ -239,7 +244,7 @@ export function splash(engine, { level = 0.5, at } = {}) {
 
 // Vision: a breathy whisper sweeping between vowel-like formants, with a faint glassy shimmer.
 export function whisper(engine, { level = 0.3, at } = {}) {
-  const v = begin(engine, at);
+  const v = begin(engine, at, true);
   if (!v) return;
   const { ctx, t0, release } = v;
   const g = ctx.createGain();
@@ -280,7 +285,7 @@ export function whisper(engine, { level = 0.3, at } = {}) {
 
 // Opening: two quick turns of bowl strikes clockwise around the ring — one voice for the whole gesture.
 export function chase(engine, { at } = {}) {
-  const v = begin(engine, at);
+  const v = begin(engine, at, true);
   if (!v) return;
   const { ctx, t0, release } = v;
   let last;
